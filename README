@@ -1,0 +1,52 @@
+MediaSniff: multi-media capturing tool
+======================================
+
+This idea came while trying various YouTube(tm) capturing tool. Instead of using a proxy
+or an ads-ridden product, why not just listen on network connections for media content ?
+
+The current incentation uses node-pcap (which does all the hard work) to decode the http
+requests. Media type is simply determined by reading the returned content-type (which works
+in most cases).
+
+The tool, while not really user-friendly is mostly satifying to me, but if you want to help
+out, you're welcome.
+
+Cheers,
+  zimbatm
+
+
+Installation
+------------
+
+* Install node (see: http://nodejs.org)
+* Install npm (see: http://npmjs.org)
+* Install node-pcap: `npm install pcap`
+* Copy/clone mediasniff.js
+
+Usage
+-----
+
+1. Edit mediasniff.js to suit your needs (see MediaSniff.defaults)
+2. Run mediasniff.js in a console
+(you may or may not need to be root, to specify the interface, ... depending on the system)
+
+3. Browse the web. Make sure waiting until load progress are full before switching pages.
+Run media
+4. Profit !
+
+Supported content-providers
+---------------------------
+
+* YouTube
+* YouTube HTML5 (webm)
+* GrooveShark
+* ???
+
+Eventual TODOS
+--------------
+
+* A real CLI
+* Publish the package on npm
+* Decode gzip-encoded requests
+* Better categorization of captured media (for example renaming the mp3 by meta-tags)
+* Growl notification on success
