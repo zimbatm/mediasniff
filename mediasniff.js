@@ -12,7 +12,26 @@ var pcap = require('pcap'),
   sys = require('sys'),
   fs = require('fs'),
   buffer = require('buffer'),
-  path = require('path');
+  path = require('path'),
+  growl, ID3File;
+
+try {
+  growl = require('growl');
+  growl.binVersion(function(err, version) {
+    if (err) {
+      _p(err);
+      growl = null;
+    }
+  });
+} catch(e) {
+  _p("Growl not available. `npm install growl`");
+}
+
+try {
+  ID3File = require('id3');
+} catch(e) {
+  _p("ID3 lib not available. `npm install id3`");
+}
 
 function MediaSniffer() { }
 exports.MediaSniffer = MediaSniffer;
@@ -84,8 +103,26 @@ MediaSniffer.prototype.start = function(options) {
   tracker.on('http response complete', function (session, http, data) {
     // TODO: depending on the media type, move the file to a more sensitive name ?
     if (session._writer) {
-      _p(session._writer.path + " written");
+      var filepath = session._writer.path;
+      _p(filepath + " written");
       session._writer.end();
+      
+      if (ID3File && /\.mp3$/.test(filepath)) {
+        fs.readFile(filepath, function (err, data) {
+          if (err) throw err;
+          
+          var id3 = new ID3File(data);
+          id3.parse();
+          var newpath = id3.get("album") + '-' + id3.get("artist") + '-' + id3.get("title") + '.mp3';
+          
+          fs.rename(filepath, newpath, function(err) {
+            if (err) throw err;
+            _p(filepath + " renamed to " + newpath);
+          });
+          
+        });
+      }
+      
       delete session._writer;
     }
   });
@@ -104,7 +141,11 @@ MediaSniffer.prototype.stop = function() {
 }
 
 function _p(obj) {
-  sys.puts(sys.inspect(obj));
+  var str = sys.inspect(obj);
+  sys.puts(str);
+  if (growl) {
+    growl.notify(str);
+  }
 }
 
 function _merge(a, b) {
