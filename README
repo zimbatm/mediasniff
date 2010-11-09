@@ -8,8 +8,8 @@ The current incentation uses node-pcap (which does all the hard work) to decode 
 requests. Media type is simply determined by reading the returned content-type (which works
 in most cases).
 
-The tool, while not really user-friendly is mostly satifying to me, but if you want to help
-out, you're welcome.
+Please note: this tool is not polished, I did it for my personal usage. Feel free to use it
+and send me some patches !
 
 Cheers,
   zimbatm
@@ -21,6 +21,8 @@ Installation
 * Install node (see: http://nodejs.org)
 * Install npm (see: http://npmjs.org)
 * Install node-pcap: `npm install pcap`
+* Install node-id3:  `npm install id3`   (optional)
+* Install node-growl:`npm install growl` (optional)
 * Copy/clone mediasniff.js
 
 Usage
@@ -49,4 +51,10 @@ Eventual TODOS
 * Publish the package on npm
 * Decode gzip-encoded requests
 * Better categorization of captured media (for example renaming the mp3 by meta-tags)
-* Growl notification on success
+
+LICENCE
+-------
+
+mediasniff.js is published without copyrights, it's under public domain.
+See: http://unlicence.org
+

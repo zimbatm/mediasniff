@@ -1,9 +1,13 @@
 #!/usr/bin/env node
 /****** MediaSniffer *****\
- *
- * Get the content you browse on the disk
- *
- */
+
+=> Get the content you browse on the disk
+
+TODO:
+ * target directory
+ * detect for complete files
+
+\*************************/
 
 /*
  * sudo sysctl -w net.inet.tcp.tso=0
@@ -115,6 +119,7 @@ MediaSniffer.prototype.start = function(options) {
           id3.parse();
           var newpath = id3.get("album") + '-' + id3.get("artist") + '-' + id3.get("title") + '.mp3';
           
+          // TODO: only rename if file doesn't exist
           fs.rename(filepath, newpath, function(err) {
             if (err) throw err;
             _p(filepath + " renamed to " + newpath);
