@@ -1,6 +1,8 @@
 MediaSniff: multi-media capturing tool
 ======================================
 
+current state: broken
+
 This idea came while trying various YouTube(tm) capturing tool. Instead of using a proxy
 or an ads-ridden product, why not just listen on network connections for media content ?
 
