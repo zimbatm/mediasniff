@@ -79,11 +79,13 @@ MediaSniffer.prototype.start = function(options) {
   tracker.on('http response', function (session, http) {
     var head = http.response.headers["Content-Type"],
       encoding = http.response.headers["Content-Encoding"],
+      clength = http.response.headers["Content-Length"],
       ext;
 
     if (head) {
       head = head.split(';')[0]
       ext = opts.mime_types[head];
+      session._ext = ext;
     }
 
     //_p([http.request.headers.Host, http.request.url]);
@@ -92,47 +94,53 @@ MediaSniffer.prototype.start = function(options) {
     // TODO: handle gzip Content-Encoding
     if (encoding || !ext) { return }
 
-    session._writer = fs.createWriteStream(path.join(opts.outdir, (new Date).getTime() + ext));
-    _p(session._writer.path + " opened");
+    // Missing Content-Lenght
+    if (!clength) { _p("Missing content-length"); return }
+
+    session._writerBuffer = new buffer.Buffer(parseInt(clength));
+    session._writerBuffer._pos = 0; // where to write
+    session._path = path.join(opts.outdir, (new Date).getTime() + ext);
+    _p(session._path + " buffering " + clength + " bytes");
   });
 
   tracker.on('http response body', function (session, http, data) {
-    if (session._writer) {
-      var d2 = bufferClone(data);
-      // FIXME: writer throttling ?
-      session._writer.write(d2);
+    if (session._writerBuffer) {
+      if (session._writerBuffer.length - session._writerBuffer._pos < data.length) {
+        _p("ERROR: buffer überflow");
+      }
+      data.copy(session._writerBuffer, session._writerBuffer._pos);
+      session._writerBuffer._pos += data.length;
+      _p(session._path + " < " + session._writerBuffer._pos + '/' + session._writerBuffer.length);
     }
   });
 
-  tracker.on('http response complete', function (session, http, data) {
+  tracker.on('http response complete', function (session, http) {
     // TODO: depending on the media type, move the file to a more sensitive name ?
-    if (session._writer) {
-      var filepath = session._writer.path;
-      _p(filepath + " written");
-      session._writer.end();
-      
-      if (ID3File && /\.mp3$/.test(filepath)) {
-        fs.readFile(filepath, function (err, data) {
-          if (err) throw err;
-          
-          var id3 = new ID3File(data);
-          id3.parse();
-          var newpath = id3.get("album") + '-' + id3.get("artist") + '-' + id3.get("title") + '.mp3';
-          
-          // TODO: only rename if file doesn't exist
-          fs.rename(filepath, newpath, function(err) {
-            if (err) throw err;
-            _p(filepath + " renamed to " + newpath);
-          });
-          
-        });
+    if (session._writerBuffer) {
+      if (session._writerBuffer._pos != session._writerBuffer.length) {
+        _p("ËRRÖR: wtf ?");
       }
-      
-      delete session._writer;
+      var filepath = session._path;
+
+      if (ID3File && session._ext == ".mp3") {
+        var id3 = new ID3File(session._writerBuffer);
+        id3.parse();
+        filepath = id3.get("album") + '-' + id3.get("artist") + '-' + id3.get("title") + '.mp3';
+      }
+
+      _p("Writing " + filepath);
+      writer = fs.createWriteStream(filepath);
+      writer.write(session._writerBuffer);
+      writer.on("drain", function() {
+        writer.end();
+        _p("Done with " + filepath);
+        delete session._writerBuffer;
+      });
     }
   });
 
   this._started = opts;
+  _p("MediaSniff started");
   return true;
 }
 
@@ -148,9 +156,9 @@ MediaSniffer.prototype.stop = function() {
 function _p(obj) {
   var str = sys.inspect(obj);
   sys.puts(str);
-  if (growl) {
+  /*if (growl) {
     growl.notify(str);
-  }
+  }*/
 }
 
 function _merge(a, b) {
